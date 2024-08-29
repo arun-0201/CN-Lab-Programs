@@ -1,95 +1,81 @@
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import javax.swing.JFrame;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.net.*;
 
-public class chat_client extends JFrame {
-
-    private ObjectOutputStream output;
-    private ObjectInputStream input;
-    private JTextArea chatArea;
-    private JTextField inputField;
+public class SocketClient extends JFrame {
+    private JTextArea textArea;
+    private JTextField textField;
     private JButton sendButton;
-    private JLabel statusLabel;
-    private Socket connection;
-    private String serverIP = "127.0.0.1";
-    private int port = 8880;
+    private JLabel connectionLabel;
+    private DataInputStream din;
+    private DataOutputStream dout;
+    private Socket socket;
 
-    public chat_client(String serverIP) {
-        this.serverIP = serverIP;
-        initComponents();
-    }
-
-    private void initComponents() {
-        chatArea = new JTextArea(15, 30);
-        inputField = new JTextField(25);
-        sendButton = new JButton("Send");
-        statusLabel = new JLabel("Status: Not Connected");
-
-        chatArea.setEditable(false);
-        sendButton.addActionListener(e -> sendMessage(inputField.getText()));
-
-        setLayout(new java.awt.BorderLayout());
-        add(new JScrollPane(chatArea), java.awt.BorderLayout.CENTER);
-        add(inputField, java.awt.BorderLayout.SOUTH);
-        add(sendButton, java.awt.BorderLayout.EAST);
-        add(statusLabel, java.awt.BorderLayout.NORTH);
-
+    public SocketClient() {
+        setTitle("Client");
+        setSize(400, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        pack();
-        setLocationRelativeTo(null);
-        setVisible(true); // Ensure the frame is visible
-    }
+        setLayout(new BorderLayout());
 
-    private void sendMessage(String message) {
-        try {
-            chatArea.append("Me: " + message + "\n");
-            output.writeObject("Client: " + message);
-            output.flush();
-            inputField.setText("");
-        } catch (IOException e) {
-            chatArea.append("Failed to send message\n");
-        }
-    }
+        // Connection status label
+        connectionLabel = new JLabel("Connected to Server at localhost:3333");
+        add(connectionLabel, BorderLayout.NORTH);
 
-    public void startRunning() {
-        try {
-            statusLabel.setText("Connecting...");
-            connection = new Socket(InetAddress.getByName(serverIP), port);
-            output = new ObjectOutputStream(connection.getOutputStream());
-            output.flush();
-            input = new ObjectInputStream(connection.getInputStream());
+        // Text area for chat messages
+        textArea = new JTextArea();
+        textArea.setEditable(false);
+        add(new JScrollPane(textArea), BorderLayout.CENTER);
 
-            statusLabel.setText("Connected to: " + connection.getInetAddress().getHostName());
-            receiveMessages();
-        } catch (IOException e) {
-            statusLabel.setText("Connection failed: " + e.getMessage());
-        }
-    }
+        // Panel for input field and send button
+        JPanel inputPanel = new JPanel(new BorderLayout());
+        textField = new JTextField();
+        sendButton = new JButton("Send");
 
-    private void receiveMessages() {
-        try {
-            String message;
-            while ((message = (String) input.readObject()) != null) {
-                chatArea.append(message + "\n");
+        inputPanel.add(textField, BorderLayout.CENTER);
+        inputPanel.add(sendButton, BorderLayout.EAST);
+        add(inputPanel, BorderLayout.SOUTH);
+
+        // Button action to send message
+        sendButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    String message = textField.getText();
+                    dout.writeUTF(message);
+                    dout.flush();
+                    textField.setText("");
+                } catch (IOException ex) {
+                    textArea.append("Error sending message.\n");
+                }
             }
-        } catch (IOException | ClassNotFoundException e) {
-            chatArea.append("Connection closed or error occurred\n");
+        });
+
+        // Establish connection
+        try {
+            socket = new Socket("localhost", 3333);
+            din = new DataInputStream(socket.getInputStream());
+            dout = new DataOutputStream(socket.getOutputStream());
+
+            // Thread to receive messages
+            new Thread(() -> {
+                try {
+                    String received;
+                    while (!(received = din.readUTF()).equals("stop")) {
+                        textArea.append("Server: " + received + "\n");
+                    }
+                } catch (IOException ex) {
+                    textArea.append("Disconnected from server.\n");
+                }
+            }).start();
+
+        } catch (Exception ex) {
+            textArea.append("Unable to connect to server.\n");
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            chat_client client = new chat_client("127.0.0.1");
-            client.startRunning(); // Start client after GUI is set up
-        });
+        SwingUtilities.invokeLater(() -> new SocketClient().setVisible(true));
     }
 }

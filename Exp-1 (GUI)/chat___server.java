@@ -6,7 +6,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class SocketServer extends JFrame {
+public class chat_server extends JFrame {
     private JTextArea textArea;
     private JTextField textField;
     private JButton sendButton;
@@ -16,7 +16,7 @@ public class SocketServer extends JFrame {
     private ServerSocket serverSocket;
     private Socket socket;
 
-    public SocketServer() {
+    public chat_server() {
         setTitle("Server");
         setSize(400, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -76,6 +76,6 @@ public class SocketServer extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new SocketServer().setVisible(true));
+        SwingUtilities.invokeLater(() -> new chat_server().setVisible(true));
     }
 }

@@ -4,7 +4,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 
-public class SocketClient extends JFrame {
+public class chat_client extends JFrame {
     private JTextArea textArea;
     private JTextField textField;
     private JButton sendButton;
@@ -13,7 +13,7 @@ public class SocketClient extends JFrame {
     private DataOutputStream dout;
     private Socket socket;
 
-    public SocketClient() {
+    public chat_client() {
         setTitle("Client");
         setSize(400, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -76,6 +76,6 @@ public class SocketClient extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new SocketClient().setVisible(true));
+        SwingUtilities.invokeLater(() -> new chat_client().setVisible(true));
     }
 }
